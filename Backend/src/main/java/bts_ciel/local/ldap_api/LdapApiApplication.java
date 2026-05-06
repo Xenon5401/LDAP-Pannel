@@ -9,5 +9,5 @@ public class LdapApiApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(LdapApiApplication.class, args);
 	}
-
+	
 }
