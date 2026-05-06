@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Utilisateurs & Groupes — SambaLDAP</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;600;700;800&display=swap');
+
+  :root {
+    --bg: #050810;
+    --surface: #0d1117;
+    --surface2: #161b22;
+    --border: #21262d;
+    --accent: #3b82f6;
+    --accent2: #06b6d4;
+    --green: #22c55e;
+    --red: #ef4444;
+    --yellow: #eab308;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --font-display: 'Syne', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font-display); min-height: 100vh; display: flex; }
+
+  /* Sidebar */
+  .sidebar {
+    width: 220px; min-height: 100vh;
+    background: var(--surface); border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; padding: 24px 16px; gap: 8px;
+    position: fixed; top: 0; left: 0; bottom: 0;
+  }
+  .sidebar-logo { font-size: 1.1rem; font-weight: 800; color: var(--text); padding: 8px 12px 24px; letter-spacing: 0.05em; border-bottom: 1px solid var(--border); margin-bottom: 8px; }
+  .sidebar-logo span { color: var(--accent); }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; color: var(--muted); text-decoration: none; font-size: 0.875rem; font-weight: 600; transition: all 0.15s; }
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active { background-color: rgba(59,130,246,0.1); color: var(--accent); }
+  .nav-item i { width: 16px; text-align: center; }
+  .sidebar-bottom { margin-top: auto; border-top: 1px solid var(--border); padding-top: 16px; }
+
+  .main { margin-left: 220px; flex: 1; padding: 32px; display: flex; flex-direction: column; gap: 24px; }
+
+  .page-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+  .page-title { font-size: 1.75rem; font-weight: 800; letter-spacing: -0.02em; }
+  .page-title span { color: var(--accent); }
+
+  .btn {
+    padding: 9px 18px; border-radius: 8px; border: none; cursor: pointer;
+    font-family: var(--font-display); font-size: 0.825rem; font-weight: 700;
+    transition: all 0.15s; display: inline-flex; align-items: center; gap: 8px;
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #2563eb; box-shadow: 0 0 16px rgba(59,130,246,0.35); }
+  .btn-ghost { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-ghost:hover { background: var(--border); }
+  .btn-danger { background: rgba(239,68,68,0.1); color: var(--red); border: 1px solid rgba(239,68,68,0.2); }
+  .btn-danger:hover { background: rgba(239,68,68,0.2); }
+  .btn-sm { padding: 5px 12px; font-size: 0.75rem; }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 4px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 4px; width: fit-content; }
+  .tab { padding: 8px 20px; border-radius: 7px; cursor: pointer; font-size: 0.85rem; font-weight: 700; color: var(--muted); transition: all 0.15s; border: none; background: none; font-family: var(--font-display); }
+  .tab.active { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .panel-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .panel-title { font-size: 0.875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
+
+  /* Search */
+  .search-input {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 7px;
+    padding: 7px 12px; color: var(--text); font-family: var(--font-mono); font-size: 0.8rem;
+    outline: none; width: 220px; transition: border-color 0.2s;
+  }
+  .search-input:focus { border-color: var(--accent); }
+  .search-input::placeholder { color: var(--muted); }
+
+  /* Table */
+  table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  th { text-align: left; padding: 10px 16px; color: var(--muted); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.07em; border-bottom: 1px solid var(--border); }
+  td { padding: 12px 16px; border-bottom: 1px solid rgba(33,38,45,0.6); font-family: var(--font-mono); font-size: 0.78rem; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(22,27,34,0.6); }
+
+  .tag {
+    font-family: var(--font-mono); font-size: 0.68rem; padding: 3px 8px;
+    border-radius: 999px; display: inline-block;
+  }
+  .tag-prof { background: rgba(168,85,247,0.12); color: #a855f7; border: 1px solid rgba(168,85,247,0.2); }
+  .tag-ciel1 { background: rgba(59,130,246,0.12); color: var(--accent); border: 1px solid rgba(59,130,246,0.2); }
+  .tag-ciel2 { background: rgba(6,182,212,0.12); color: var(--accent2); border: 1px solid rgba(6,182,212,0.2); }
+  .tag-admin { background: rgba(234,179,8,0.12); color: var(--yellow); border: 1px solid rgba(234,179,8,0.2); }
+
+  .actions { display: flex; gap: 6px; }
+
+  /* Section hidden/shown by tab */
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* Group cards */
+  .group-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; padding: 20px; }
+  .group-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 18px; transition: border-color 0.2s; }
+  .group-card:hover { border-color: var(--accent); }
+  .group-card-name { font-weight: 700; font-size: 1rem; margin-bottom: 4px; }
+  .group-card-gid { font-family: var(--font-mono); font-size: 0.72rem; color: var(--muted); margin-bottom: 12px; }
+  .group-card-count { font-size: 0.8rem; color: var(--muted); margin-bottom: 14px; }
+  .group-card-count strong { color: var(--text); }
+  .group-actions { display: flex; gap: 8px; }
+
+  /* CSV zone */
+  .csv-section { padding: 20px; display: flex; flex-direction: column; gap: 20px; }
+  .drop-zone {
+    border: 2px dashed var(--border); border-radius: 12px; padding: 40px;
+    text-align: center; cursor: pointer; transition: all 0.2s;
+    background: var(--surface2);
+  }
+  .drop-zone:hover, .drop-zone.drag-over { border-color: var(--accent); background: rgba(59,130,246,0.05); }
+  .drop-zone-icon { font-size: 2rem; margin-bottom: 12px; }
+  .drop-zone-text { font-size: 0.9rem; font-weight: 600; margin-bottom: 6px; }
+  .drop-zone-sub { font-size: 0.78rem; color: var(--muted); font-family: var(--font-mono); }
+  #csvFileInput { display: none; }
+
+  .csv-preview {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+    padding: 14px 16px; font-family: var(--font-mono); font-size: 0.75rem; color: var(--muted);
+    max-height: 160px; overflow-y: auto; display: none;
+  }
+  .csv-preview.show { display: block; }
+
+  .csv-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .csv-status { font-size: 0.8rem; font-family: var(--font-mono); }
+  .csv-status.ok { color: var(--green); }
+  .csv-status.err { color: var(--red); }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity 0.2s;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+    padding: 28px; width: 100%; max-width: 420px;
+    transform: translateY(10px); transition: transform 0.2s;
+  }
+  .modal-overlay.open .modal { transform: translateY(0); }
+  .modal-title { font-size: 1.1rem; font-weight: 800; margin-bottom: 20px; }
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); margin-bottom: 7px; }
+  .field input, .field select {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 12px; color: var(--text);
+    font-family: var(--font-mono); font-size: 0.85rem; outline: none; transition: border-color 0.2s;
+  }
+  .field input:focus, .field select:focus { border-color: var(--accent); }
+  .field select option { background: var(--surface2); }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+</style>
+</head>
+<body>
+
+<nav class="sidebar">
+  <div class="sidebar-logo">Samba<span>LDAP</span></div>
+  <a href="dashboard.html" class="nav-item">🗂 Dashboard</a>
+  <a href="users.html" class="nav-item active">👥 Utilisateurs</a>
+  <a href="droits.html" class="nav-item">🛡 Droits</a>
+  <a href="mdp.html" class="nav-item">🔑 Mots de passe</a>
+  <div class="sidebar-bottom">
+    <a href="login.html" class="nav-item">↩ Déconnexion</a>
+  </div>
+</nav>
+
+<main class="main">
+  <div class="page-header">
+    <h1 class="page-title">Utilisateurs <span>&amp; Groupes</span></h1>
+    <button class="btn btn-primary" onclick="openModal()">+ Nouvel utilisateur</button>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('users', this)">Utilisateurs</button>
+    <button class="tab" onclick="switchTab('groups', this)">Groupes</button>
+    <button class="tab" onclick="switchTab('csv', this)">Import CSV</button>
+  </div>
+
+  <!-- USERS TAB -->
+  <div id="tab-users" class="tab-content active">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">Liste des utilisateurs</span>
+        <input class="search-input" type="text" placeholder="Rechercher…" oninput="filterTable(this.value)" />
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Login</th>
+            <th>Nom complet</th>
+            <th>UID</th>
+            <th>Groupe</th>
+            <th>Shell</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="userTableBody">
+          <!-- populated by JS -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- GROUPS TAB -->
+  <div id="tab-groups" class="tab-content">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">Groupes LDAP</span>
+        <button class="btn btn-ghost btn-sm">+ Nouveau groupe</button>
+      </div>
+      <div class="group-grid">
+        <div class="group-card">
+          <div class="group-card-name">prof</div>
+          <div class="group-card-gid">GID: 2000</div>
+          <div class="group-card-count">Membres : <strong>4</strong></div>
+          <div class="group-actions">
+            <button class="btn btn-ghost btn-sm">Modifier</button>
+            <button class="btn btn-danger btn-sm">Supprimer</button>
+          </div>
+        </div>
+        <div class="group-card">
+          <div class="group-card-name">ciel1</div>
+          <div class="group-card-gid">GID: 2001</div>
+          <div class="group-card-count">Membres : <strong>12</strong></div>
+          <div class="group-actions">
+            <button class="btn btn-ghost btn-sm">Modifier</button>
+            <button class="btn btn-danger btn-sm">Supprimer</button>
+          </div>
+        </div>
+        <div class="group-card">
+          <div class="group-card-name">ciel2</div>
+          <div class="group-card-gid">GID: 2002</div>
+          <div class="group-card-count">Membres : <strong>9</strong></div>
+          <div class="group-actions">
+            <button class="btn btn-ghost btn-sm">Modifier</button>
+            <button class="btn btn-danger btn-sm">Supprimer</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CSV TAB -->
+  <div id="tab-csv" class="tab-content">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">Import CSV</span>
+        <span style="font-family:var(--font-mono);font-size:0.72rem;color:var(--muted);">Format attendu : login,nom,prenom,groupe,mdp</span>
+      </div>
+      <div class="csv-section">
+        <div class="drop-zone" id="dropZone" onclick="document.getElementById('csvFileInput').click()"
+             ondragover="event.preventDefault();this.classList.add('drag-over')"
+             ondragleave="this.classList.remove('drag-over')"
+             ondrop="handleDrop(event)">
+          <div class="drop-zone-icon">📄</div>
+          <div class="drop-zone-text">Glisser-déposer un fichier CSV</div>
+          <div class="drop-zone-sub">ou cliquer pour parcourir</div>
+          <input type="file" id="csvFileInput" accept=".csv" onchange="handleFile(this.files[0])" />
+        </div>
+
+        <div class="csv-preview" id="csvPreview"></div>
+
+        <div class="csv-actions">
+          <button class="btn btn-primary" id="btnImport" disabled onclick="launchImport()">
+            ▶ Lancer l'import
+          </button>
+          <button class="btn btn-ghost" onclick="resetCsv()">Réinitialiser</button>
+          <span class="csv-status" id="csvStatus"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- Modal: Add/Edit user -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModalOutside(event)">
+  <div class="modal">
+    <div class="modal-title" id="modalTitle">Nouvel utilisateur</div>
+    <div class="field">
+      <label>Login (uid)</label>
+      <input type="text" id="fLogin" placeholder="jdupont" />
+    </div>
+    <div class="field">
+      <label>Prénom</label>
+      <input type="text" id="fFirstname" placeholder="Jean" />
+    </div>
+    <div class="field">
+      <label>Nom</label>
+      <input type="text" id="fLastname" placeholder="Dupont" />
+    </div>
+    <div class="field">
+      <label>Groupe</label>
+      <select id="fGroup">
+        <option value="prof">prof</option>
+        <option value="ciel1">ciel1</option>
+        <option value="ciel2">ciel2</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Mot de passe</label>
+      <input type="password" id="fPassword" placeholder="••••••••" />
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-primary" onclick="saveUser()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Sample data — replace with fetch('/api/users') 
+  const users = [
+    { login: 'admin', name: 'Administrateur', uid: 1000, group: 'admin', shell: '/bin/bash' },
+    { login: 'jdupont', name: 'Jean Dupont', uid: 1001, group: 'prof', shell: '/bin/bash' },
+    { login: 'amartin', name: 'Alice Martin', uid: 1002, group: 'ciel1', shell: '/bin/bash' },
+    { login: 'lbernard', name: 'Luc Bernard', uid: 1003, group: 'ciel2', shell: '/bin/bash' },
+    { login: 'cmichel', name: 'Célia Michel', uid: 1004, group: 'ciel1', shell: '/bin/bash' },
+    { login: 'pblanc', name: 'Paul Blanc', uid: 1005, group: 'ciel2', shell: '/bin/bash' },
+  ];
+
+  const tagClass = { prof: 'tag-prof', ciel1: 'tag-ciel1', ciel2: 'tag-ciel2', admin: 'tag-admin' };
+
+  function renderTable(data) {
+    const tbody = document.getElementById('userTableBody');
+    tbody.innerHTML = data.map(u => `
+      <tr>
+        <td>${u.login}</td>
+        <td>${u.name}</td>
+        <td>${u.uid}</td>
+        <td><span class="tag ${tagClass[u.group] || ''}">${u.group}</span></td>
+        <td>${u.shell}</td>
+        <td>
+          <div class="actions">
+            <button class="btn btn-ghost btn-sm" onclick="editUser('${u.login}')">Modifier</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteUser('${u.login}')">Supprimer</button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  }
+  renderTable(users);
+
+  function filterTable(q) {
+    const filtered = users.filter(u =>
+      u.login.includes(q) || u.name.toLowerCase().includes(q.toLowerCase()) || u.group.includes(q)
+    );
+    renderTable(filtered);
+  }
+
+  function switchTab(name, el) {
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    el.classList.add('active');
+  }
+
+  // Modal
+  function openModal() {
+    document.getElementById('modalTitle').textContent = 'Nouvel utilisateur';
+    document.getElementById('modalOverlay').classList.add('open');
+  }
+  function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); }
+  function closeModalOutside(e) { if (e.target === document.getElementById('modalOverlay')) closeModal(); }
+
+  function editUser(login) {
+    const u = users.find(x => x.login === login);
+    if (!u) return;
+    document.getElementById('modalTitle').textContent = 'Modifier ' + login;
+    document.getElementById('fLogin').value = u.login;
+    document.getElementById('fGroup').value = u.group;
+    document.getElementById('modalOverlay').classList.add('open');
+  }
+
+  function deleteUser(login) {
+    if (confirm('Supprimer ' + login + ' ?')) {
+      // TODO: fetch('/api/users/' + login, { method: 'DELETE' })
+      alert('TODO: DELETE /api/users/' + login);
+    }
+  }
+
+  function saveUser() {
+    const data = {
+      login: document.getElementById('fLogin').value,
+      firstname: document.getElementById('fFirstname').value,
+      lastname: document.getElementById('fLastname').value,
+      group: document.getElementById('fGroup').value,
+      password: document.getElementById('fPassword').value,
+    };
+    // TODO: fetch('/api/users', { method: 'POST', body: JSON.stringify(data) })
+    console.log('POST /api/users', data);
+    closeModal();
+    alert('Utilisateur créé (TODO: brancher API)');
+  }
+
+  // CSV import
+  let csvFile = null;
+
+  function handleDrop(e) {
+    e.preventDefault();
+    document.getElementById('dropZone').classList.remove('drag-over');
+    const f = e.dataTransfer.files[0];
+    if (f) handleFile(f);
+  }
+
+  function handleFile(f) {
+    if (!f || !f.name.endsWith('.csv')) {
+      setStatus('Fichier invalide. Sélectionnez un .csv', 'err');
+      return;
+    }
+    csvFile = f;
+    const reader = new FileReader();
+    reader.onload = e => {
+      const preview = document.getElementById('csvPreview');
+      const lines = e.target.result.split('\n').slice(0, 8).join('\n');
+      preview.textContent = lines;
+      preview.classList.add('show');
+      document.getElementById('btnImport').disabled = false;
+      setStatus(f.name + ' — prêt', 'ok');
+    };
+    reader.readAsText(f);
+  }
+
+  function launchImport() {
+    if (!csvFile) return;
+    const formData = new FormData();
+    formData.append('csv', csvFile);
+    setStatus('Envoi en cours…', '');
+    document.getElementById('btnImport').disabled = true;
+
+    // TODO: replace with your actual endpoint
+    fetch('/api/users/import-csv', { method: 'POST', body: formData })
+      .then(r => r.json())
+      .then(d => setStatus('Import terminé : ' + (d.added || '?') + ' utilisateurs ajoutés', 'ok'))
+      .catch(() => setStatus('Erreur lors de l\'import', 'err'));
+  }
+
+  function resetCsv() {
+    csvFile = null;
+    document.getElementById('csvPreview').classList.remove('show');
+    document.getElementById('csvPreview').textContent = '';
+    document.getElementById('btnImport').disabled = true;
+    document.getElementById('csvFileInput').value = '';
+    setStatus('', '');
+  }
+
+  function setStatus(msg, type) {
+    const s = document.getElementById('csvStatus');
+    s.textContent = msg;
+    s.className = 'csv-status ' + type;
+  }
+</script>
+</body>
+</html>

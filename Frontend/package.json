@@ -15,9 +15,19 @@
   "type": "commonjs",
   "main": "index.js",
   "scripts": {
+    "dev": "concurrently \"npm run watch:css\" \"nodemon index.js\"",
+    "build:css": "npx tailwindcss -i ./src/styles.css -o ./public/style.css",
+    "watch:css": "npx tailwindcss -i ./src/styles.css -o ./public/style.css --watch",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
+    "express": "^5.2.1",
+    "reload": "^3.4.3",
     "tailwindcss": "^4.2.4"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.2.4",
+    "concurrently": "^8.2.2",
+    "nodemon": "^3.1.14"
   }
 }

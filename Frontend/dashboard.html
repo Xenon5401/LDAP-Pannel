@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — SambaLDAP</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/js/all.min.js" defer></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;600;700;800&display=swap');
+
+  :root {
+    --bg: #050810;
+    --surface: #0d1117;
+    --surface2: #161b22;
+    --border: #21262d;
+    --accent: #3b82f6;
+    --accent2: #06b6d4;
+    --green: #22c55e;
+    --red: #ef4444;
+    --yellow: #eab308;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --font-display: 'Syne', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-display);
+    min-height: 100vh;
+    display: flex;
+  }
+
+  /* Sidebar */
+  .sidebar {
+    width: 220px;
+    min-height: 100vh;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 24px 16px;
+    gap: 8px;
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+  }
+
+  .sidebar-logo {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--text);
+    padding: 8px 12px 24px;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 8px;
+  }
+  .sidebar-logo span { color: var(--accent); }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 600;
+    transition: all 0.15s;
+  }
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active { background: var(--accent)/10; color: var(--accent); background-color: rgba(59,130,246,0.1); }
+  .nav-item i { width: 16px; text-align: center; }
+
+  .sidebar-bottom {
+    margin-top: auto;
+    border-top: 1px solid var(--border);
+    padding-top: 16px;
+  }
+
+  /* Main */
+  .main {
+    margin-left: 220px;
+    flex: 1;
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .page-title {
+    font-size: 1.75rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+  .page-title span { color: var(--accent); }
+  .badge {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(34,197,94,0.1);
+    color: var(--green);
+    border: 1px solid rgba(34,197,94,0.2);
+  }
+
+  /* Status cards */
+  .cards-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    transition: border-color 0.2s;
+  }
+  .card:hover { border-color: var(--accent); }
+
+  .card-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .card-value {
+    font-family: var(--font-mono);
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .card-sub {
+    font-size: 0.75rem;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    display: inline-block;
+    animation: pulse 2s infinite;
+  }
+  .dot.green { background: var(--green); }
+  .dot.red { background: var(--red); }
+  .dot.yellow { background: var(--yellow); }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* Two-col grid */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .panel-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .panel-title {
+    font-size: 0.875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .panel-body { padding: 16px 20px; }
+
+  /* Log list */
+  .log-list { display: flex; flex-direction: column; gap: 4px; }
+  .log-entry {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    padding: 6px 10px;
+    border-radius: 6px;
+    background: var(--surface2);
+    color: var(--muted);
+    display: flex;
+    gap: 12px;
+  }
+  .log-entry .time { color: var(--accent2); flex-shrink: 0; }
+  .log-entry .method { color: var(--green); flex-shrink: 0; }
+  .log-entry .path { color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .log-entry .code { margin-left: auto; flex-shrink: 0; }
+  .log-entry .code.ok { color: var(--green); }
+  .log-entry .code.err { color: var(--red); }
+
+  /* Storage bars */
+  .storage-list { display: flex; flex-direction: column; gap: 14px; }
+  .storage-item {}
+  .storage-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.78rem;
+    margin-bottom: 6px;
+  }
+  .storage-name { font-weight: 600; }
+  .storage-size { font-family: var(--font-mono); color: var(--muted); font-size: 0.72rem; }
+  .bar-track {
+    height: 6px;
+    background: var(--surface2);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transition: width 0.6s ease;
+  }
+  .bar-fill.warn { background: linear-gradient(90deg, var(--yellow), #f97316); }
+  .bar-fill.danger { background: linear-gradient(90deg, var(--red), #f97316); }
+
+  /* SMB status */
+  .smb-status {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: 10px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    margin-bottom: 10px;
+  }
+  .smb-status .info { flex: 1; }
+  .smb-status .sname { font-weight: 700; font-size: 0.875rem; }
+  .smb-status .sdesc { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+  .tag {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    padding: 3px 8px;
+    border-radius: 999px;
+  }
+  .tag.up { background: rgba(34,197,94,0.1); color: var(--green); border: 1px solid rgba(34,197,94,0.2); }
+  .tag.down { background: rgba(239,68,68,0.1); color: var(--red); border: 1px solid rgba(239,68,68,0.2); }
+
+  /* Connections table */
+  .conn-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+  .conn-table th {
+    text-align: left;
+    padding: 8px 10px;
+    color: var(--muted);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    border-bottom: 1px solid var(--border);
+  }
+  .conn-table td {
+    padding: 10px 10px;
+    border-bottom: 1px solid rgba(33,38,45,0.5);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+  }
+  .conn-table tr:last-child td { border-bottom: none; }
+  .conn-table tr:hover td { background: var(--surface2); }
+  .user-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(59,130,246,0.1);
+    color: var(--accent);
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 0.72rem;
+  }
+</style>
+</head>
+<body>
+
+<nav class="sidebar">
+  <div class="sidebar-logo">Samba<span>LDAP</span></div>
+  <a href="dashboard.html" class="nav-item active"><i class="fas fa-gauge-high"></i> Dashboard</a>
+  <a href="users.html" class="nav-item"><i class="fas fa-users"></i> Utilisateurs</a>
+  <a href="droits.html" class="nav-item"><i class="fas fa-shield-halved"></i> Droits</a>
+  <a href="mdp.html" class="nav-item"><i class="fas fa-key"></i> Mots de passe</a>
+  <div class="sidebar-bottom">
+    <a href="login.html" class="nav-item"><i class="fas fa-right-from-bracket"></i> Déconnexion</a>
+  </div>
+</nav>
+
+<main class="main">
+  <div class="page-header">
+    <h1 class="page-title">Dash<span>board</span></h1>
+    <span class="badge">● Serveur actif</span>
+  </div>
+
+  <!-- Stat cards -->
+  <div class="cards-row">
+    <div class="card">
+      <div class="card-label">Connexions actives</div>
+      <div class="card-value" id="activeConn">—</div>
+      <div class="card-sub"><span class="dot green"></span> Mis à jour en temps réel</div>
+    </div>
+    <div class="card">
+      <div class="card-label">SMB Service</div>
+      <div class="card-value" id="smbStatus" style="font-size:1.1rem;margin-top:4px;">—</div>
+      <div class="card-sub"><span class="dot green"></span> Samba 4 actif</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Utilisateurs LDAP</div>
+      <div class="card-value" id="userCount">—</div>
+      <div class="card-sub"><span class="dot yellow"></span> Total annuaire</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Partages actifs</div>
+      <div class="card-value" id="shareCount">—</div>
+      <div class="card-sub"><span class="dot green"></span> Montés</div>
+    </div>
+  </div>
+
+  <!-- SMB shares + Connexions -->
+  <div class="two-col">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">Partages SMB</span>
+        <span class="tag up">ACTIF</span>
+      </div>
+      <div class="panel-body">
+        <div class="smb-status">
+          <div class="info"><div class="sname">homes</div><div class="sdesc">/home/%U</div></div>
+          <span class="tag up">UP</span>
+        </div>
+        <div class="smb-status">
+          <div class="info"><div class="sname">HOMES_ALL</div><div class="sdesc">/home — admin only</div></div>
+          <span class="tag up">UP</span>
+        </div>
+        <div class="smb-status">
+          <div class="info"><div class="sname">PUBLIC</div><div class="sdesc">/srv/samba/public</div></div>
+          <span class="tag up">UP</span>
+        </div>
+        <div class="smb-status">
+          <div class="info"><div class="sname">PROF</div><div class="sdesc">/srv/samba/prof</div></div>
+          <span class="tag up">UP</span>
+        </div>
+        <div class="smb-status">
+          <div class="info"><div class="sname">CIEL1</div><div class="sdesc">/srv/samba/ciel1</div></div>
+          <span class="tag down">DOWN</span>
+        </div>
+        <div class="smb-status">
+          <div class="info"><div class="sname">CIEL2</div><div class="sdesc">/srv/samba/ciel2</div></div>
+          <span class="tag up">UP</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">Connexions actives</span>
+      </div>
+      <div class="panel-body">
+        <table class="conn-table">
+          <thead>
+            <tr>
+              <th>Utilisateur</th>
+              <th>IP</th>
+              <th>Partage</th>
+              <th>Depuis</th>
+            </tr>
+          </thead>
+          <tbody id="connTable">
+            <tr><td colspan="4" style="color:var(--muted);text-align:center;padding:20px;">Chargement…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Logs + Stockage -->
+  <div class="two-col">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">Logs récents</span>
+        <span style="font-family:var(--font-mono);font-size:0.7rem;color:var(--muted);">GET</span>
+      </div>
+      <div class="panel-body">
+        <div class="log-list" id="logList">
+          <div class="log-entry"><span class="time">10:42:01</span><span class="method">GET</span><span class="path">/api/shares/status</span><span class="code ok">200</span></div>
+          <div class="log-entry"><span class="time">10:41:58</span><span class="method">GET</span><span class="path">/api/users/list</span><span class="code ok">200</span></div>
+          <div class="log-entry"><span class="time">10:41:30</span><span class="method">GET</span><span class="path">/api/connections</span><span class="code ok">200</span></div>
+          <div class="log-entry"><span class="time">10:40:12</span><span class="method">GET</span><span class="path">/api/storage</span><span class="code ok">200</span></div>
+          <div class="log-entry"><span class="time">10:39:44</span><span class="method">GET</span><span class="path">/api/smb/status</span><span class="code err">500</span></div>
+          <div class="log-entry"><span class="time">10:38:10</span><span class="method">GET</span><span class="path">/api/users/list</span><span class="code ok">200</span></div>
+          <div class="log-entry"><span class="time">10:37:05</span><span class="method">GET</span><span class="path">/api/shares/status</span><span class="code ok">200</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">Stockage disponible</span>
+      </div>
+      <div class="panel-body">
+        <div class="storage-list">
+          <div class="storage-item">
+            <div class="storage-meta">
+              <span class="storage-name">PUBLIC</span>
+              <span class="storage-size">12 Go / 50 Go</span>
+            </div>
+            <div class="bar-track"><div class="bar-fill" style="width:24%"></div></div>
+          </div>
+          <div class="storage-item">
+            <div class="storage-meta">
+              <span class="storage-name">PROF</span>
+              <span class="storage-size">38 Go / 50 Go</span>
+            </div>
+            <div class="bar-track"><div class="bar-fill warn" style="width:76%"></div></div>
+          </div>
+          <div class="storage-item">
+            <div class="storage-meta">
+              <span class="storage-name">CIEL1</span>
+              <span class="storage-size">5 Go / 30 Go</span>
+            </div>
+            <div class="bar-track"><div class="bar-fill" style="width:17%"></div></div>
+          </div>
+          <div class="storage-item">
+            <div class="storage-meta">
+              <span class="storage-name">CIEL2</span>
+              <span class="storage-size">27 Go / 30 Go</span>
+            </div>
+            <div class="bar-track"><div class="bar-fill danger" style="width:90%"></div></div>
+          </div>
+          <div class="storage-item">
+            <div class="storage-meta">
+              <span class="storage-name">homes</span>
+              <span class="storage-size">8 Go / 100 Go</span>
+            </div>
+            <div class="bar-track"><div class="bar-fill" style="width:8%"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+  // Simulated data — replace fetch() calls with your actual API endpoints
+  document.getElementById('activeConn').textContent = '4';
+  document.getElementById('smbStatus').textContent = 'ACTIF';
+  document.getElementById('userCount').textContent = '23';
+  document.getElementById('shareCount').textContent = '5';
+
+  const connData = [
+    { user: 'jdupont', ip: '192.168.1.42', share: 'PROF', since: '09:12' },
+    { user: 'amartin', ip: '192.168.1.55', share: 'CIEL2', since: '09:45' },
+    { user: 'admin', ip: '192.168.1.1', share: 'HOMES_ALL', since: '08:01' },
+    { user: 'lbernard', ip: '192.168.1.67', share: 'PUBLIC', since: '10:30' },
+  ];
+
+  const tbody = document.getElementById('connTable');
+  tbody.innerHTML = connData.map(c => `
+    <tr>
+      <td><span class="user-pill">⬡ ${c.user}</span></td>
+      <td>${c.ip}</td>
+      <td>${c.share}</td>
+      <td>${c.since}</td>
+    </tr>
+  `).join('');
+</script>
+</body>
+</html>

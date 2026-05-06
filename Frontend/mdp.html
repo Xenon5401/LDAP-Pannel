@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mots de passe — SambaLDAP</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;600;700;800&display=swap');
+
+  :root {
+    --bg: #050810; --surface: #0d1117; --surface2: #161b22; --border: #21262d;
+    --accent: #3b82f6; --accent2: #06b6d4; --green: #22c55e; --red: #ef4444;
+    --yellow: #eab308; --text: #e6edf3; --muted: #8b949e;
+    --font-display: 'Syne', sans-serif; --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font-display); min-height: 100vh; display: flex; }
+
+  .sidebar { width: 220px; min-height: 100vh; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 24px 16px; gap: 8px; position: fixed; top: 0; left: 0; bottom: 0; }
+  .sidebar-logo { font-size: 1.1rem; font-weight: 800; padding: 8px 12px 24px; letter-spacing: 0.05em; border-bottom: 1px solid var(--border); margin-bottom: 8px; }
+  .sidebar-logo span { color: var(--accent); }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; color: var(--muted); text-decoration: none; font-size: 0.875rem; font-weight: 600; transition: all 0.15s; }
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active { background-color: rgba(59,130,246,0.1); color: var(--accent); }
+  .sidebar-bottom { margin-top: auto; border-top: 1px solid var(--border); padding-top: 16px; }
+
+  .main { margin-left: 220px; flex: 1; padding: 32px; display: flex; flex-direction: column; gap: 24px; max-width: calc(100% - 220px); }
+
+  .page-title { font-size: 1.75rem; font-weight: 800; letter-spacing: -0.02em; }
+  .page-title span { color: var(--accent); }
+  .page-sub { font-size: 0.82rem; color: var(--muted); font-family: var(--font-mono); margin-top: 4px; }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .panel-header { padding: 16px 20px; border-bottom: 1px solid var(--border); }
+  .panel-title { font-size: 0.875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel-sub { font-size: 0.75rem; color: var(--muted); margin-top: 4px; font-family: var(--font-mono); }
+  .panel-body { padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+
+  .field label { display: block; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); margin-bottom: 7px; }
+  .field { margin-bottom: 0; }
+
+  .input-wrap { position: relative; }
+  .input-wrap input {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 11px 40px 11px 13px; color: var(--text);
+    font-family: var(--font-mono); font-size: 0.85rem; outline: none; transition: border-color 0.2s;
+  }
+  .input-wrap input:focus { border-color: var(--accent); }
+  .input-wrap input::placeholder { color: var(--muted); }
+  .toggle-eye {
+    position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+    cursor: pointer; color: var(--muted); font-size: 0.85rem; background: none; border: none;
+    transition: color 0.15s;
+  }
+  .toggle-eye:hover { color: var(--text); }
+
+  select {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 11px 13px; color: var(--text);
+    font-family: var(--font-mono); font-size: 0.85rem; outline: none; transition: border-color 0.2s;
+  }
+  select:focus { border-color: var(--accent); }
+  select option { background: var(--surface2); }
+
+  /* Strength bar */
+  .strength-bar { margin-top: 8px; }
+  .strength-track { height: 4px; background: var(--surface2); border-radius: 999px; overflow: hidden; }
+  .strength-fill { height: 100%; border-radius: 999px; transition: width 0.3s, background 0.3s; width: 0%; }
+  .strength-label { font-family: var(--font-mono); font-size: 0.7rem; color: var(--muted); margin-top: 5px; }
+
+  .btn { padding: 11px 18px; border-radius: 8px; border: none; cursor: pointer; font-family: var(--font-display); font-size: 0.875rem; font-weight: 700; transition: all 0.15s; display: inline-flex; align-items: center; gap: 8px; width: 100%; justify-content: center; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #2563eb; box-shadow: 0 0 16px rgba(59,130,246,0.3); }
+  .btn-ghost { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-ghost:hover { background: var(--border); }
+
+  .alert {
+    padding: 10px 14px; border-radius: 8px; font-size: 0.8rem;
+    font-family: var(--font-mono); display: none;
+  }
+  .alert.show { display: block; }
+  .alert.ok { background: rgba(34,197,94,0.1); color: var(--green); border: 1px solid rgba(34,197,94,0.2); }
+  .alert.err { background: rgba(239,68,68,0.1); color: var(--red); border: 1px solid rgba(239,68,68,0.2); }
+
+  /* Bulk reset table */
+  table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  th { text-align: left; padding: 10px 16px; color: var(--muted); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.07em; border-bottom: 1px solid var(--border); }
+  td { padding: 10px 16px; border-bottom: 1px solid rgba(33,38,45,0.5); font-family: var(--font-mono); font-size: 0.78rem; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(22,27,34,0.5); }
+
+  .tag { font-family: var(--font-mono); font-size: 0.68rem; padding: 3px 8px; border-radius: 999px; }
+  .tag-prof { background: rgba(168,85,247,0.12); color: #a855f7; border: 1px solid rgba(168,85,247,0.2); }
+  .tag-ciel1 { background: rgba(59,130,246,0.12); color: var(--accent); border: 1px solid rgba(59,130,246,0.2); }
+  .tag-ciel2 { background: rgba(6,182,212,0.12); color: var(--accent2); border: 1px solid rgba(6,182,212,0.2); }
+
+  .btn-inline { padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface2); color: var(--text); font-family: var(--font-mono); font-size: 0.72rem; cursor: pointer; transition: all 0.15s; width: auto; justify-content: flex-start; }
+  .btn-inline:hover { border-color: var(--accent); color: var(--accent); background: rgba(59,130,246,0.05); }
+</style>
+</head>
+<body>
+
+<nav class="sidebar">
+  <div class="sidebar-logo">Samba<span>LDAP</span></div>
+  <a href="dashboard.html" class="nav-item">🗂 Dashboard</a>
+  <a href="users.html" class="nav-item">👥 Utilisateurs</a>
+  <a href="droits.html" class="nav-item">🛡 Droits</a>
+  <a href="mdp.html" class="nav-item active">🔑 Mots de passe</a>
+  <div class="sidebar-bottom">
+    <a href="login.html" class="nav-item">↩ Déconnexion</a>
+  </div>
+</nav>
+
+<main class="main">
+  <div>
+    <h1 class="page-title">Gestion <span>MDP</span></h1>
+    <p class="page-sub">Réinitialisation individuelle ou par groupe</p>
+  </div>
+
+  <div class="two-col">
+    <!-- Change individual password -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">Changer le mot de passe</div>
+        <div class="panel-sub">LDAP + Samba simultanément</div>
+      </div>
+      <div class="panel-body">
+        <div class="field">
+          <label>Utilisateur</label>
+          <select id="selUser">
+            <option value="">-- Sélectionner --</option>
+            <option value="jdupont">jdupont</option>
+            <option value="amartin">amartin</option>
+            <option value="lbernard">lbernard</option>
+            <option value="cmichel">cmichel</option>
+            <option value="pblanc">pblanc</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Nouveau mot de passe</label>
+          <div class="input-wrap">
+            <input type="password" id="newPass" placeholder="••••••••" oninput="checkStrength(this.value)" />
+            <button class="toggle-eye" onclick="toggleVis('newPass', this)">👁</button>
+          </div>
+          <div class="strength-bar">
+            <div class="strength-track"><div class="strength-fill" id="strengthFill"></div></div>
+            <div class="strength-label" id="strengthLabel">—</div>
+          </div>
+        </div>
+        <div class="field">
+          <label>Confirmer</label>
+          <div class="input-wrap">
+            <input type="password" id="confPass" placeholder="••••••••" />
+            <button class="toggle-eye" onclick="toggleVis('confPass', this)">👁</button>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="changePass()">Appliquer</button>
+        <div class="alert" id="alertChange"></div>
+      </div>
+    </div>
+
+    <!-- Generate random password -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">Générer un mot de passe</div>
+        <div class="panel-sub">Aléatoire sécurisé</div>
+      </div>
+      <div class="panel-body">
+        <div class="field">
+          <label>Longueur</label>
+          <select id="genLen">
+            <option value="12">12 caractères</option>
+            <option value="16" selected>16 caractères</option>
+            <option value="20">20 caractères</option>
+            <option value="24">24 caractères</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Mot de passe généré</label>
+          <div class="input-wrap">
+            <input type="text" id="genOut" readonly placeholder="Cliquer pour générer…" style="cursor:default;" />
+            <button class="toggle-eye" onclick="copyGen()" title="Copier">📋</button>
+          </div>
+        </div>
+        <button class="btn btn-ghost" onclick="generatePass()">🎲 Générer</button>
+        <button class="btn btn-primary" id="btnApplyGen" disabled onclick="applyGenerated()">Appliquer à l'utilisateur sélectionné</button>
+        <div class="alert" id="alertGen"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bulk reset -->
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-title">Réinitialisation par groupe</div>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Utilisateur</th>
+          <th>Groupe</th>
+          <th>Dernière modif.</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>jdupont</td><td><span class="tag tag-prof">prof</span></td><td>2024-09-01</td><td><button class="btn btn-inline" onclick="resetOne('jdupont')">Réinitialiser</button></td></tr>
+        <tr><td>amartin</td><td><span class="tag tag-ciel1">ciel1</span></td><td>2024-09-01</td><td><button class="btn btn-inline" onclick="resetOne('amartin')">Réinitialiser</button></td></tr>
+        <tr><td>lbernard</td><td><span class="tag tag-ciel2">ciel2</span></td><td>2024-09-01</td><td><button class="btn btn-inline" onclick="resetOne('lbernard')">Réinitialiser</button></td></tr>
+        <tr><td>cmichel</td><td><span class="tag tag-ciel1">ciel1</span></td><td>2024-09-01</td><td><button class="btn btn-inline" onclick="resetOne('cmichel')">Réinitialiser</button></td></tr>
+        <tr><td>pblanc</td><td><span class="tag tag-ciel2">ciel2</span></td><td>2024-09-01</td><td><button class="btn btn-inline" onclick="resetOne('pblanc')">Réinitialiser</button></td></tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+
+<script>
+  function toggleVis(id, btn) {
+    const inp = document.getElementById(id);
+    if (inp.type === 'password') { inp.type = 'text'; btn.textContent = '🙈'; }
+    else { inp.type = 'password'; btn.textContent = '👁'; }
+  }
+
+  function checkStrength(val) {
+    const fill = document.getElementById('strengthFill');
+    const label = document.getElementById('strengthLabel');
+    let score = 0;
+    if (val.length >= 8) score++;
+    if (val.length >= 12) score++;
+    if (/[A-Z]/.test(val)) score++;
+    if (/[0-9]/.test(val)) score++;
+    if (/[^A-Za-z0-9]/.test(val)) score++;
+    const levels = [
+      { pct: '0%', color: 'transparent', text: '—' },
+      { pct: '20%', color: '#ef4444', text: 'Très faible' },
+      { pct: '40%', color: '#f97316', text: 'Faible' },
+      { pct: '60%', color: '#eab308', text: 'Moyen' },
+      { pct: '80%', color: '#22c55e', text: 'Fort' },
+      { pct: '100%', color: '#06b6d4', text: 'Très fort' },
+    ];
+    const l = levels[Math.min(score, 5)];
+    fill.style.width = val ? l.pct : '0%';
+    fill.style.background = l.color;
+    label.textContent = val ? l.text : '—';
+  }
+
+  function changePass() {
+    const user = document.getElementById('selUser').value;
+    const np = document.getElementById('newPass').value;
+    const cp = document.getElementById('confPass').value;
+    const alert = document.getElementById('alertChange');
+
+    if (!user) { showAlert(alert, 'Sélectionnez un utilisateur.', 'err'); return; }
+    if (!np) { showAlert(alert, 'Entrez un nouveau mot de passe.', 'err'); return; }
+    if (np !== cp) { showAlert(alert, 'Les mots de passe ne correspondent pas.', 'err'); return; }
+    if (np.length < 8) { showAlert(alert, 'Minimum 8 caractères requis.', 'err'); return; }
+
+    // TODO: fetch('/api/users/' + user + '/password', { method: 'PUT', body: JSON.stringify({ password: np }) })
+    showAlert(alert, 'Mot de passe mis à jour pour ' + user, 'ok');
+  }
+
+  function generatePass() {
+    const len = parseInt(document.getElementById('genLen').value);
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%^&*';
+    let pass = '';
+    const arr = new Uint32Array(len);
+    crypto.getRandomValues(arr);
+    for (let i = 0; i < len; i++) pass += chars[arr[i] % chars.length];
+    document.getElementById('genOut').value = pass;
+    document.getElementById('btnApplyGen').disabled = false;
+  }
+
+  function copyGen() {
+    const val = document.getElementById('genOut').value;
+    if (val) { navigator.clipboard.writeText(val); }
+  }
+
+  function applyGenerated() {
+    const user = document.getElementById('selUser').value;
+    const pass = document.getElementById('genOut').value;
+    const alert = document.getElementById('alertGen');
+    if (!user) { showAlert(alert, 'Sélectionnez d\'abord un utilisateur (panneau gauche).', 'err'); return; }
+    if (!pass) { showAlert(alert, 'Générez d\'abord un mot de passe.', 'err'); return; }
+    // TODO: fetch('/api/users/' + user + '/password', ...)
+    showAlert(alert, 'Mot de passe appliqué à ' + user, 'ok');
+  }
+
+  function resetOne(user) {
+    if (confirm('Réinitialiser le mot de passe de ' + user + ' ?')) {
+      // TODO: fetch('/api/users/' + user + '/reset-password', { method: 'POST' })
+      alert('TODO: POST /api/users/' + user + '/reset-password');
+    }
+  }
+
+  function showAlert(el, msg, type) {
+    el.textContent = msg;
+    el.className = 'alert show ' + type;
+    setTimeout(() => el.classList.remove('show'), 4000);
+  }
+</script>
+</body>
+</html>
