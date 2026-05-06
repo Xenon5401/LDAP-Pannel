@@ -2,6 +2,8 @@ package bts_ciel.local.ldap_api.user;
 
 import org.springframework.ldap.odm.annotations.*;
 import javax.naming.ldap.LdapName;
+import java.util.List;
+import java.util.ArrayList;
 
 @Entry(base = "ou=users", objectClasses = {"inetOrgPerson", "person"})
 public class LdapUser {
@@ -14,5 +16,25 @@ public class LdapUser {
 
     @Attribute(name = "cn")
     private String commonName;
-    // Getters/Setters (ou utilise Lombok: @Data)
+
+    @Attribute(name = "memberOf")
+    private List<String> memberOf;  // Liste des groupes LDAP
+
+    // Get
+    public String getUsername() {
+        return username;
+    }
+
+    public String getCommonName() {
+        return commonName;
+    }
+
+    public LdapName getDn() {
+        return dn;
+    }
+
+    public List<String> getMemberOf() {
+        return memberOf != null ? memberOf : new ArrayList<>();
+    }
+
 }
