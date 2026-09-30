@@ -3,78 +3,48 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard — SambaLDAP</title>
-  <link rel="stylesheet" href="/public/style.css">
+  <meta name="theme-color" content="#f2f5f2">
+  <title>Accueil — SambaLDAP</title>
+  <link rel="stylesheet" href="public/style.css">
 </head>
-<body class="min-h-screen bg-slate-950 text-slate-100">
-  <div class="min-h-screen flex">
-    <aside class="w-56 bg-slate-900 border-r border-slate-800 p-5 flex flex-col gap-5">
-      <div>
-        <p class="text-xs uppercase tracking-[0.35em] text-slate-500">Samba<span class="text-blue-400">LDAP</span></p>
-      </div>
-      <nav class="space-y-2 text-sm">
-        <a href="#" class="block rounded-2xl px-3 py-2 font-semibold text-blue-400 bg-blue-500/10">Dashboard</a>
-        <a href="#" class="block rounded-2xl px-3 py-2 text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition">Utilisateurs</a>
-        <a href="#" class="block rounded-2xl px-3 py-2 text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition">Droits</a>
-        <a href="#" class="block rounded-2xl px-3 py-2 text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition">Mots de passe</a>
-      </nav>
-      <div class="mt-auto text-xs text-slate-500">Dashboard léger et minimal.</div>
-    </aside>
+<body>
+  <main class="entry-layout">
+    <header class="entry-topline">
+      <div class="entry-brand">Samba<span>LDAP</span></div>
+      <a class="btn btn-ghost" href="login.html">Connexion administrateur</a>
+    </header>
 
-    <main class="flex-1 p-6">
-      <header class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p class="text-xs uppercase tracking-[0.35em] text-slate-500">Tableau de bord</p>
-          <h1 class="mt-3 text-4xl font-semibold">SambaLDAP</h1>
-        </div>
-        <span class="inline-flex items-center gap-2 rounded-2xl border border-slate-700 bg-slate-900/70 px-4 py-2 text-sm text-slate-300">
-          <span class="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-          Serveur actif
-        </span>
-      </header>
+    <p class="entry-eyebrow">Console d’administration · bts-ciel.local</p>
+    <h1 class="entry-title">L’annuaire, <span>sous contrôle.</span></h1>
+    <p class="entry-copy">Un point d’accès clair pour gérer les comptes, les accès aux partages et la supervision de votre service SambaLDAP.</p>
 
-      <section class="grid gap-4 xl:grid-cols-4">
-        <article class="rounded-3xl border border-slate-700 bg-slate-900/80 p-5 shadow-xl shadow-slate-900/20">
-          <p class="text-xs uppercase tracking-[0.35em] text-slate-500">Utilisateurs</p>
-          <p class="mt-4 text-3xl font-semibold">23</p>
-        </article>
-        <article class="rounded-3xl border border-slate-700 bg-slate-900/80 p-5 shadow-xl shadow-slate-900/20">
-          <p class="text-xs uppercase tracking-[0.35em] text-slate-500">Connexions</p>
-          <p class="mt-4 text-3xl font-semibold">4</p>
-        </article>
-        <article class="rounded-3xl border border-slate-700 bg-slate-900/80 p-5 shadow-xl shadow-slate-900/20">
-          <p class="text-xs uppercase tracking-[0.35em] text-slate-500">Partages</p>
-          <p class="mt-4 text-3xl font-semibold">5</p>
-        </article>
-        <article class="rounded-3xl border border-slate-700 bg-slate-900/80 p-5 shadow-xl shadow-slate-900/20">
-          <p class="text-xs uppercase tracking-[0.35em] text-slate-500">Logs</p>
-          <p class="mt-4 text-3xl font-semibold">7</p>
-        </article>
-      </section>
+    <nav class="entry-grid" aria-label="Outils SambaLDAP">
+      <a class="entry-link" href="dashboard.html">
+        <span class="entry-index">01 / SUIVI</span>
+        <strong>Supervision</strong>
+        <small>État des services, connexions et stockage</small>
+      </a>
+      <a class="entry-link" href="users.html">
+        <span class="entry-index">02 / ANNUAIRE</span>
+        <strong>Utilisateurs</strong>
+        <small>Comptes, groupes et import CSV</small>
+      </a>
+      <a class="entry-link" href="droits.html">
+        <span class="entry-index">03 / PARTAGES</span>
+        <strong>Droits d’accès</strong>
+        <small>Permissions des partages SMB</small>
+      </a>
+      <a class="entry-link" href="mdp.html">
+        <span class="entry-index">04 / SÉCURITÉ</span>
+        <strong>Mots de passe</strong>
+        <small>Réinitialisation et génération sécurisée</small>
+      </a>
+    </nav>
 
-      <section class="mt-6 grid gap-6 lg:grid-cols-2">
-        <div class="rounded-3xl border border-slate-700 bg-slate-900/80 p-6 shadow-xl shadow-slate-900/20">
-          <div class="flex items-center justify-between text-sm text-slate-400 uppercase tracking-[0.35em] mb-4">
-            <span>Partages actifs</span>
-            <span class="rounded-full bg-emerald-500/10 px-3 py-1 text-emerald-300">ACTIF</span>
-          </div>
-          <div class="space-y-3 text-sm text-slate-300">
-            <p>homes — /home/%U</p>
-            <p>PUBLIC — /srv/samba/public</p>
-            <p>PROF — /srv/samba/prof</p>
-          </div>
-        </div>
-
-        <div class="rounded-3xl border border-slate-700 bg-slate-900/80 p-6 shadow-xl shadow-slate-900/20">
-          <div class="text-sm text-slate-400 uppercase tracking-[0.35em] mb-4">Connexions récentes</div>
-          <div class="space-y-3 text-sm text-slate-300">
-            <div class="rounded-2xl bg-slate-950/70 p-3">jdupont — 192.168.1.42 — PROF</div>
-            <div class="rounded-2xl bg-slate-950/70 p-3">amartin — 192.168.1.55 — CIEL2</div>
-            <div class="rounded-2xl bg-slate-950/70 p-3">admin — 192.168.1.1 — HOMES_ALL</div>
-          </div>
-        </div>
-      </section>
-    </main>
-  </div>
+    <footer class="entry-foot">
+      <span>LDAP · SAMBA · GESTION DES ACCÈS</span>
+      <a href="indexmodifier.html">Vue alternative du tableau de bord</a>
+    </footer>
+  </main>
 </body>
 </html>
